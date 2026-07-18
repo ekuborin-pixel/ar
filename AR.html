@@ -2,107 +2,65 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>MindAR Loader</title>
+<title>MindAR GLB Viewer</title>
 
-<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+<script type="module">
 
-<style>
-html,body{
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-}
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { GLTFLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+import { MindARThree } from "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js";
 
-#loading{
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:#000;
-    color:#fff;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-size:32px;
-    z-index:9999;
-}
+const mindarThree = new MindARThree({
+    container: document.body,
+    imageTargetSrc: "./targets.mind",
+});
 
-a-scene{
-    display:none;
-}
-</style>
-</head>
+const {renderer, scene, camera} = mindarThree;
 
-<body>
+// ライト
+const light = new THREE.HemisphereLight(0xffffff,0xbbbbff,1);
+scene.add(light);
 
-<div id="loading">
-読み込み中...
-</div>
+// マーカー0
+const anchor = mindarThree.addAnchor(0);
 
-<a-scene
-id="scene"
-mindar-image="imageTargetSrc: ./target.mind;"
-color-space="sRGB"
-renderer="colorManagement:true; physicallyCorrectLights:true"
-vr-mode-ui="enabled:false"
-device-orientation-permission-ui="enabled:false">
+// GLB読み込み
+const loader = new GLTFLoader();
 
-<a-assets>
-    <a-asset-item id="model" src="./xxx.glb"></a-asset-item>
-</a-assets>
-
-<a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
-
-<a-entity mindar-image-target="targetIndex:0">
-    <a-gltf-model
-        id="gltf"
-        src="#model"
-        position="0 0 0"
-        rotation="0 0 0"
-        scale="0.2 0.2 0.2">
-    </a-gltf-model>
-</a-entity>
-
-</a-scene>
-
-<script>
-
-const scene = document.getElementById("scene");
-const loading = document.getElementById("loading");
-const model = document.getElementById("gltf");
-
-let mindLoaded = false;
-let modelLoaded = false;
-
-function checkReady(){
-    if(mindLoaded && modelLoaded){
-        loading.style.display="none";
-        scene.style.display="block";
-        console.log("すべて読み込み完了");
+loader.load(
+    "./xxx.glb",
+    (gltf)=>{
+        gltf.scene.scale.set(0.2,0.2,0.2);
+        gltf.scene.position.set(0,0,0);
+        anchor.group.add(gltf.scene);
+    },
+    undefined,
+    (err)=>{
+        console.error(err);
     }
-}
+);
 
-// target.mindの読み込み完了
-scene.addEventListener("renderstart",()=>{
-    mindLoaded=true;
-    checkReady();
-});
+// スタート
+await mindarThree.start();
 
-// glbの読み込み完了
-model.addEventListener("model-loaded",()=>{
-    modelLoaded=true;
-    checkReady();
-});
-
-// エラー
-model.addEventListener("model-error",()=>{
-    loading.innerHTML="GLBの読み込みに失敗しました";
+renderer.setAnimationLoop(()=>{
+    renderer.render(scene,camera);
 });
 
 </script>
 
+<style>
+html,body{
+    margin:0;
+    overflow:hidden;
+}
+canvas{
+    width:100%;
+    height:100%;
+}
+</style>
+
+</head>
+<body>
 </body>
 </html>
