@@ -2,89 +2,104 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindAR Loader</title>
 
-<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
 <style>
 html,body{
-  margin:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
 }
+
 #loading{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:#000;
-  color:#fff;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:24px;
-  z-index:9999;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:#000;
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:32px;
+    z-index:9999;
+}
+
+a-scene{
+    display:none;
 }
 </style>
 </head>
 
 <body>
 
-<div id="loading">読み込み中...</div>
+<div id="loading">
+読み込み中...
+</div>
 
 <a-scene
-  mindar-image="imageTargetSrc: ./targets.mind;"
-  color-space="sRGB"
-  renderer="colorManagement:true; physicallyCorrectLights:true"
-  vr-mode-ui="enabled:false"
-  device-orientation-permission-ui="enabled:false">
+id="scene"
+mindar-image="imageTargetSrc: ./target.mind;"
+color-space="sRGB"
+renderer="colorManagement:true; physicallyCorrectLights:true"
+vr-mode-ui="enabled:false"
+device-orientation-permission-ui="enabled:false">
 
-  <a-assets>
-    <a-asset-item
-      id="model"
-      src="./xxx.glb">
-    </a-asset-item>
-  </a-assets>
+<a-assets>
+    <a-asset-item id="model" src="./xxx.glb"></a-asset-item>
+</a-assets>
 
-  <a-camera
-    position="0 0 0"
-    look-controls="enabled:false">
-  </a-camera>
+<a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 
-  <a-entity mindar-image-target="targetIndex:0">
-
+<a-entity mindar-image-target="targetIndex:0">
     <a-gltf-model
-      src="#model"
-      position="0 0 0"
-      rotation="0 0 0"
-      scale="0.2 0.2 0.2">
+        id="gltf"
+        src="#model"
+        position="0 0 0"
+        rotation="0 0 0"
+        scale="0.2 0.2 0.2">
     </a-gltf-model>
-
-  </a-entity>
+</a-entity>
 
 </a-scene>
 
 <script>
 
-const loading=document.getElementById("loading");
-const scene=document.querySelector("a-scene");
+const scene = document.getElementById("scene");
+const loading = document.getElementById("loading");
+const model = document.getElementById("gltf");
 
-scene.addEventListener("loaded",()=>{
-    loading.innerHTML="カメラ起動中...";
-});
+let mindLoaded = false;
+let modelLoaded = false;
 
-scene.addEventListener("arReady",()=>{
-    loading.innerHTML="読み込み完了";
-    setTimeout(()=>{
+function checkReady(){
+    if(mindLoaded && modelLoaded){
         loading.style.display="none";
-    },1000);
+        scene.style.display="block";
+        console.log("すべて読み込み完了");
+    }
+}
+
+// target.mindの読み込み完了
+scene.addEventListener("renderstart",()=>{
+    mindLoaded=true;
+    checkReady();
 });
 
-scene.addEventListener("arError",()=>{
-    loading.innerHTML="ARの起動に失敗しました";
+// glbの読み込み完了
+model.addEventListener("model-loaded",()=>{
+    modelLoaded=true;
+    checkReady();
+});
+
+// エラー
+model.addEventListener("model-error",()=>{
+    loading.innerHTML="GLBの読み込みに失敗しました";
 });
 
 </script>
